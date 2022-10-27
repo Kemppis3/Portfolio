@@ -3,6 +3,8 @@ Showcase of my programming projects to this date.
 
 All the projects are my final projects for programming courses in University of Oulu.
 
+Documentation is done in finnish. I will update the documentation to english in the future.
+
 Minesweeper, Ohjelmoinnin alkeet
 
 ATM machine, Ohjelmointi 1
