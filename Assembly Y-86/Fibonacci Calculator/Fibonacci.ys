@@ -1,0 +1,541 @@
+# Ohjelman toimintaperiaate:
+# Ohjelma lukee muistipaikasta 0x700 lähtien olevasta lukujonosta lukuja, laskee
+# kertoo luetun luvun ensin itsellään, sitten viidellä ja lopuksi lisää ja
+# vähentää saadusta luvusta luvun 4. Seuraavaksi saaduille luvuille lasketaan
+# neliöjuuret ja saatu tulos korotetaan toiseen. Kun alkuperäinen luettu luku 
+# vähennetään saadusta neliöjuuren neliöstä, vastauksen pitäisi jommassa kummassa
+# tilanteessa olla 0, jolloin luku on Fibonaccin luku. Jos näin ei ole, luettu luku
+# palautetaan %rax-rekisterissä ja ohjelman suoritus lopetetaan. 
+# Taas jos luettu luku on 0, joka päättää lukujonon palautetaan 
+# %rax-rekisterissä luku 0 ja ohjelman suoritus lopetetaan. 
+
+main:
+
+readfirstnumber:    
+    irmovq array, %r11              #Luetaan ensimmäinen luku lukujonosta
+    mrmovq (%r11), %r12
+    irmovq results, %rdi            #Siirretään luettu luku muistiin
+    rmmovq %r12, 32(%rdi)
+    irmovq $8, %rax
+    rmmovq %rax, 48(%rdi)           # Muistipaikan lisäämiseen tarkoitettu luku
+    irmovq $0, %rax                 # Nollavertailu. Jos 1.luku on nolla ei ole
+    addq %rax, %r12                 # järkeä lähteä suorittamaan ohjelmaa
+    je rezero
+    jg firstMulti                   
+
+firstMulti:                         # Lasketaan tässä x*x (peasant algoritmi)
+    irmovq stack, %rbp              # Pino-osoitin
+    irmovq stack, %rsp              # Pinon alkuosoite
+    rrmovq %r12, %r11               # Ensin luku kerrotaan itsellään x*x
+    rrmovq %r11, %r13               
+    irmovq $1,%r8
+    subq %r8, %r13                  # Katsotaan, onko luku 1. Säästetään käskyjä
+    je isFibonacci
+    
+    irmovq $0, %r13                 # Reset r13-rekisteri
+    andq %r11,%r8                      
+    cmovne %r12,%rax        
+    subq %r8,%r11
+    irmovq $1,%r8
+
+firstMultiLoop:
+    addq %r8,%r8
+    rrmovq %r11,%rdi
+    andq %r8,%rdi
+    je firstMultiLoop
+    call firstPreshift
+    subq %r8,%r11
+    je saveFirstMulti
+    jmp firstMultiLoop
+
+    firstPreshift:
+        irmovq $0,%rcx
+        irmovq $1,%r9
+        rrmovq %r8,%r10
+        rrmovq %r12,%rsi
+    firstShiftBit:
+        rrmovq %r12,%rdx
+        andq %r9,%rdx
+        je firstReset
+        addq %r10,%rcx
+        subq %r9,%rsi
+        je firstEndShift
+
+    firstReset:
+        addq %r9,%r9
+        addq %r10,%r10
+        jmp firstShiftBit
+    
+    firstEndShift:
+        addq %rcx,%rax
+        ret
+
+
+saveFirstMulti:                     # Tallennetaan x*x tulos muistiin
+    irmovq results, %rdi
+    rmmovq %rax, (%rdi)
+    irmovq $0, %rax
+    jmp multiByFive
+
+multiByFive:                        # Kerrotaan x*x tulos viidellä
+    irmovq stack, %rbp
+    irmovq stack, %rsp
+    irmovq $5, %r11
+    mrmovq (%rdi), %r12
+    irmovq $1,%r8
+    andq %r11,%r8
+    cmovne %r12,%rax
+    subq %r8,%r11
+    irmovq $1,%r8                   
+
+secondMultiLoop:
+    addq %r8,%r8
+    rrmovq %r11,%rdi
+    andq %r8,%rdi
+    je secondMultiLoop
+    call secondPreshift
+    subq %r8,%r11
+    je plusAndMinusFour
+    jmp secondMultiLoop
+
+    secondPreshift:
+        irmovq $0,%rcx
+        irmovq $1,%r9
+        rrmovq %r8,%r10
+        rrmovq %r12,%rsi
+    secondShiftBit:
+        rrmovq %r12,%rdx
+        andq %r9,%rdx
+        je secondReset
+        addq %r10,%rcx
+        subq %r9,%rsi
+        je secondEndShift
+    
+    secondReset:
+        addq %r9,%r9
+        addq %r10,%r10
+        jmp secondShiftBit
+    
+    secondEndShift:
+        addq %rcx,%rax
+        ret
+
+
+plusAndMinusFour:                   # Lisätään ja vähennetään 4 saadusta luvusta
+    irmovq results, %rdi
+    irmovq $4, %r8
+    rrmovq %rax, %r9
+    addq %r8, %rax
+    subq %r8, %r9
+    rmmovq %rax, 8(%rdi)
+    rmmovq %r9, 16(%rdi)
+    irmovq $0, %rax                 # Nollataan rekisterit ennen neliöjuuren
+    irmovq $0, %rbx                 # laskemista
+    irmovq $0, %rcx
+    irmovq $0, %rdx
+    irmovq $0, %rsp
+    irmovq $0, %rbp
+    irmovq $0, %rsi
+    irmovq $0, %rdi
+    irmovq $0, %r8
+    irmovq $0, %r9
+    irmovq $0, %r10
+    irmovq $0, %r11
+    irmovq $0, %r12
+    irmovq $0, %r13
+    irmovq $0, %r14
+    jmp usePlusFour
+
+usePlusFour:                        # Lasketaan ensin 5*x*x+4
+    irmovq results, %rdi
+    mrmovq 8(%rdi), %r12
+    jmp takeSqrt
+    
+useMinusFour:                       # Tarvittaessa 5*x*x-4
+    irmovq results, %rdi
+    mrmovq 16(%rdi), %r12
+    jmp takeSqrt
+
+.pos 0x800
+takeSqrt: 
+    irmovq stack, %rsp         # Pino-osoitin
+    irmovq stack, %rbp         # Pinon alkuosoite
+        
+    # 2^24 oli pienin, jolla neliöjuuren laskeminen toimi luvuille,
+    # joita fibonacci ohjelmassa annetaan (1-1000)
+    
+    irmovq startingPoint, %rdx     # muistipaikka 0x1000
+    irmovq 0x1000000, %r14         #2^24    
+    rmmovq %r14,(%rdx)
+    irmovq 0x800000, %r14          #2^23 
+    rmmovq %r14,8(%rdx)
+    irmovq 0x400000, %r14          #2^22 
+    rmmovq %r14,16(%rdx)
+    irmovq 0x200000, %r14          #2^21 
+    rmmovq %r14,24(%rdx)
+    irmovq 0x100000, %r14          #2^20 
+    rmmovq %r14,32(%rdx)
+    irmovq 0x80000, %r14           #2^19
+    rmmovq %r14,40(%rdx)
+    irmovq 0x40000, %r14           #2^18
+    rmmovq %r14, 48(%rdx)
+    irmovq 0x20000, %r14           #2^17
+    rmmovq %r14,56(%rdx)
+    irmovq 0x10000, %r8            #2^16
+    rmmovq %r8, 64(%rdx)
+    irmovq 0x8000, %r8             #2^15
+    rmmovq %r8, 72(%rdx)
+    irmovq 0x4000, %r8             #2^14
+    rmmovq %r8, 80(%rdx)
+    irmovq 0x2000, %r8             #2^13
+    rmmovq %r8, 88(%rdx)
+    irmovq 0x1000, %r8             #2^12
+    rmmovq %r8, 96(%rdx)
+    irmovq 0x800, %r8              #2^11
+    rmmovq %r8, 104(%rdx)
+    irmovq 0x400, %r8              #2^10
+    rmmovq %r8, 112(%rdx)
+    irmovq 0x200, %r8              #2^9
+    rmmovq %r8, 120(%rdx)
+    irmovq 0x100, %r8              #2^8
+    rmmovq %r8, 128(%rdx)
+    irmovq 0x80, %r8               #2^7
+    rmmovq %r8, 136(%rdx)
+    irmovq 0x40, %r8               #2^6
+    rmmovq %r8, 144(%rdx)
+    irmovq 0x20, %r8               #2^5
+    rmmovq %r8, 152(%rdx)
+    irmovq 0x10, %r8               #2^4
+    rmmovq %r8, 160(%rdx)
+    irmovq 0x8, %r8                #2^3
+    rmmovq %r8, 168(%rdx)
+    irmovq 0x4, %r8                #2^2
+    rmmovq %r8, 176(%rdx)
+    irmovq 0x2, %r8                #2`1
+    rmmovq %r8, 184(%rdx)
+    irmovq 0x1, %r8                #2^0
+    rmmovq %r8, 192(%rdx)
+    irmovq 0x0, %r8                
+    rmmovq %r8, 200(%rdx)
+
+
+    irmovq results, %rdi    # Otetaan nykyinen numero muistiin talteen
+    rmmovq %r12, 40(%rdi)           # Myöhempää vertailua varten
+    
+    irmovq variablesInMemory, %rsi  # Muistipaikka 0x1400
+    
+    irmovq $0, %r8                 
+    rmmovq %r8, (%rsi)              # Muistipaikka nykyiselle bitin arvolle
+    
+    irmovq $0, %r8                
+    rmmovq %r8, 8(%rsi)             # Muistipaikka res >> 1:lle
+    
+    irmovq $8, %r8       
+    rmmovq %r8, 16(%rsi)            # Muistipaikka + 8
+    
+    irmovq $16, %r8       
+    rmmovq %r8, 24(%rsi)            # Muistipaikka + 16
+
+    irmovq 0x1000000, %rax          # Bit 1 << 24
+    irmovq $0,%rcx                  # Res = 0
+    
+    mrmovq 24(%rsi), %r8            # Apumuuttuja bittien shiftaukseen, 
+                                    # alussa 16, jotta bit >> 2 voidaan tehdä
+
+    irmovq 0x1000, %rdx             # Bittitaulukon aloitusmuistipaikka
+
+   call checkIfNumLarger            # Neliöjuurifunktiossa kutsuttavat funktiot 
+   call checkIfBitZero              
+
+checkIfNumLarger:                   # if(bit > num)
+  rrmovq %rax, %r10                 # Apumuuttujasijoitus. rax(bit) -> r10
+  subq %r12, %r10                   # num - bit
+  jg shiftBitByTwo                  # if(bit > num) -> bit >> 2
+  jle fixMemPos                                  
+  
+fixMemPos:
+  subq %r8, %rdx                    # Nyt bit =< num, joten korjataan
+                                    # muistipaikkaa -16, eli bit << 2
+  mrmovq (%rdx), %rax               # Haetaan arvo %rdx:n osoittamasta 
+                                    # muistipaikasta ja sijoitetaan se
+                                    # rekisteriin %rax
+  rmmovq %rdx, (%rsi)               # Sijoitetaan %rdx:n arvo rsi:n
+                                    # muistiosoitteeseen
+  ret                               # palataan funktiokutsun luo
+
+shiftBitByTwo:
+    mrmovq (%rdx),%rax              # Haetaan bitin arvo %rdx:n osoittamasta
+                                    # muistipaikasta ja säilötään se rax:n
+    addq %r8,%rdx                   # Siirrytään 16 muistipaikkaa eteenpäin
+                                    # eli bit >> 2 seuraavalla kierroksella            
+    jmp checkIfNumLarger
+
+checkIfBitZero:                     # while bit != 0
+  irmovq $0,%r13                    
+  subq %rax,%r13                    # bit - 0
+  jne preset                        # if else rakenne, jos bit != 0
+  jmp quit                          # lopetetaan ohjelman suoritus
+                   
+preset:
+  irmovq $0, %r13                   # Sum = 0 # rrmovq   
+  rrmovq %rcx, %r14                 # %rcx, %r14 Apumuuttuja, rcx = res, r14 = res
+  mrmovq 16(%rsi), %r8              # Apumuuttuja r8 -> 8, ennen 16, nyt 8
+  irmovq 0x1000, %rdx               # Reset bittilistan aloitusmuistipaikka
+  jmp conditionCheck
+
+conditionCheck:                 
+  mrmovq (%rdx), %rbx               # Haetaan bittilistan arvo muistista rbx:än 
+  irmovq $1, %r9
+  subq %rbx, %r9                    # Jos bittilistan arvo != 1
+  jne shiftResByOneBit              # Res >> 1
+  jmp resetAndGetValuesForComparison       
+
+shiftResByOneBit:
+    mrmovq 8(%rdx), %r10            # Bittilistan arvo + 8 muistista -> r10
+    rrmovq %r14, %r9                # Tässä r14 = rcx = res
+    subq   %rbx, %r9                # rbx = bittilistan arvo
+    irmovq $0, %r11
+
+    # if ALU >= 0, eli res > bittilistan arvo, ehdolliset siirto-operaatiot toteutuvat
+    cmovge %r9, %r14               # r14 = res - bittilistan arvo                   
+    cmovge %r10, %r11              # r11 -> bittilistan arvo + 8, eli bittilistan arvo >> 1
+    
+    addq %r8,%rdx                  # bittilistan shiftaus >> 1
+    addq %r11,%r13                 # Jos ehdo täyttynyt lisätään res >> 1 -> r13                           
+                                   # Muuten lisätään 0. 
+    jmp conditionCheck
+
+
+resetAndGetValuesForComparison:
+    rmmovq %r13, 8(%rsi)           # Lisätään res >> 1 omaan muistipaikkaan
+    irmovq $0, %r14                # Apumuuttujan nollaus
+    irmovq $0, %r13                # Apumuuttujan nollaus
+    irmovq $0, %r11                # Apumuuttujan nollaus
+    jmp compareValues
+    
+
+compareValues:                     #if (num >= res + bit)
+    mrmovq 8(%rsi),%r9             # Haetaan res >> 1 muistipaikasta
+    addq %rax,%r9                  # (res >> 1) + bit
+    rrmovq %r9,%r13                # ((res >>1) + bit) --> r13
+
+    rrmovq %r12,%r14               # num -> r14
+
+    rrmovq %rax,%r9                # bit -> r9
+    addq %rcx,%r9                  # res + bit -> r9
+
+    mrmovq 8(%rsi), %r10            # (res >> 1) -> r10
+    subq %r9, %r14                  # num - (bit + res)
+
+    #ALU < tai >(=) 0
+    cmovge %r14,%r12                # Jos ALU >= 0 -> num = num - (res + bit)
+                                    # r14 -> r12
+    cmovge %r13,%r10                # r10 = res + bit
+    rrmovq %r10,%rcx                # res = (res + bit) tai res >> 1
+                                    # Riippuen siitä täyttyykö ehto
+    jmp shiftBitByTwoAgain          #  bit >> 2
+
+
+shiftBitByTwoAgain:
+    mrmovq 24(%rsi), %r8            # Apumuuttujan arvo -> + 16
+    mrmovq (%rsi), %rdx             # Bittilistan arvo -> rdx      
+    addq %r8, %rdx                  # Lisätään + 16 listan arvoon (>> 2)
+    mrmovq (%rdx),%rax              # Haetaan uusi bitin arvo muistista rax:in, bit >> 2
+    rmmovq %rdx, (%rsi)             # Päivitetään nykyinen bittilistan paikka
+    jmp checkIfBitZero              # While bit != 0
+
+
+quit:
+    irmovq results, %rdi
+    rmmovq %rcx, 24(%rdi)
+    
+    mrmovq 8(%rdi), %rax            # Otetaan muistista 5*x*x + 4
+    mrmovq 40(%rdi), %rbx           # Otetaan muistista nykyinen r12
+    
+    subq %rax, %rbx                 # Katsotaan onko menossa + vai - tarkistus
+    je risePlus                     # Jos ALU == 0, niin kyseessä on 5*x*x + 4
+    jne riseMinus                   # Muuten kyseessä 5*x*x - 4
+
+risePlus:                           #Korotetaan 5*x*x*4 tuloksen neliöjuuri toiseen
+    
+    irmovq $0, %rax
+    irmovq stack, %rbp
+    irmovq stack, %rsp
+    irmovq results, %rdx
+    mrmovq 24(%rdx), %r11
+    rrmovq %r11, %r12
+    irmovq $1,%r8
+    andq %r11,%r8
+    cmovne %r12,%rax
+    subq %r8,%r11
+    irmovq $1,%r8
+    
+firstPlusSquareloop:
+
+    addq %r8,%r8
+    rrmovq %r11,%rdi
+    andq %r8,%rdi
+    je firstPlusSquareloop
+    call plusSquarePreshift
+    subq %r8,%r11
+    je isPlusPerfectSquare
+    jmp firstPlusSquareloop
+
+    plusSquarePreshift:
+        irmovq $0,%rcx
+        irmovq $1,%r9
+        rrmovq %r8,%r10
+        rrmovq %r12,%rsi
+    plusSquareshiftBit:
+        rrmovq %r12,%rdx
+        andq %r9,%rdx
+        je plusSquareReset
+        addq %r10,%rcx
+        subq %r9,%rsi
+        je plusSquareEndShift
+    
+    plusSquareReset:
+        addq %r9,%r9
+        addq %r10,%r10
+        jmp plusSquareshiftBit
+    
+    plusSquareEndShift:
+        addq %rcx,%rax
+        ret
+
+riseMinus:                              #Korotetaan 5*x*x-4 neliöjuuri toiseen
+    irmovq $0, %rax
+    irmovq stack, %rbp
+    irmovq stack, %rsp
+    irmovq results, %rdx
+    mrmovq 24(%rdx), %r11
+    rrmovq %r11, %r12
+    irmovq $1,%r8
+    andq %r11,%r8
+    cmovne %r12,%rax
+    subq %r8,%r11
+    irmovq $1,%r8
+    
+firstMinusSquareloop:
+    addq %r8,%r8
+    rrmovq %r11,%rdi
+    andq %r8,%rdi
+    je firstMinusSquareloop
+    call minusSquarePreshift
+    subq %r8,%r11
+    je isMinusPerfectSquare
+    jmp firstMinusSquareloop
+
+    minusSquarePreshift:
+        irmovq $0,%rcx
+        irmovq $1,%r9
+        rrmovq %r8,%r10
+        rrmovq %r12,%rsi
+    minusSquareshiftBit:
+        rrmovq %r12,%rdx
+        andq %r9,%rdx
+        je minusSquareReset
+        addq %r10,%rcx
+        subq %r9,%rsi
+        je minusSquareEndShift
+    
+    minusSquareReset:
+        addq %r9,%r9
+        addq %r10,%r10
+        jmp minusSquareshiftBit
+    
+    minusSquareEndShift:
+        addq %rcx,%rax
+        ret
+
+
+isPlusPerfectSquare:                # Katsotaan onko +4 tulos täydellinen
+    irmovq results, %rdi            # neliöjuuri
+    mrmovq 8(%rdi), %rbx
+    subq %rbx, %rax
+    je isFibonacci                  # Jos alu = 0 -> fibonacci löytyi
+    jne resetForMinusCheck          # Jos ei +4 tulos ollut fibonacci
+                                    # tarkastetaan -4
+
+isMinusPerfectSquare:               # Katsotaan onko +4 tulos täydellinen
+    irmovq results, %rdi
+    mrmovq 16(%rdi), %rbx
+    subq %rbx, %rax
+    je isFibonacci                  # Jos alu = 0 -> fibonacci löytyi
+    jmp notFibonacci                # Jos -4 tuloskaan ei ollut fibonacci
+                                    # Luku ei ole fibonaccin luku 
+                                    # -> lopetetaan ohjelman suoritus
+
+
+resetForMinusCheck:                 # Resetoidaan rekisterit -4 tarkistusta varten
+    irmovq $0, %rax
+    irmovq $0, %rbx
+    irmovq $0, %rcx
+    irmovq $0, %rdx
+    irmovq $0, %rbp
+    irmovq $0, %rsp
+    irmovq $0, %rsi
+    irmovq $0, %rdi
+    irmovq $0, %r8
+    irmovq $0, %r9
+    irmovq $0, %r10
+    irmovq $0, %r11
+    irmovq $0, %r12
+    irmovq $0, %r13
+    irmovq $0, %r14
+    jmp useMinusFour            
+
+isFibonacci:                        # resetoidaan rekisterit ja luetaan
+    irmovq $0, %rax                 # seuraava luku listasta 
+    irmovq $0, %rcx
+    irmovq $0, %rsp
+    irmovq $0, %rbp
+    irmovq $0, %rsi
+    irmovq $0, %rdi
+    irmovq $0, %r8
+    irmovq $0, %r9
+    irmovq $0, %r10
+    irmovq $0, %r11
+    irmovq $0, %r12
+    irmovq $0, %r13
+    irmovq $0, %r14
+    irmovq $8, %rbx
+    irmovq array, %r11
+    irmovq results, %rdi
+    mrmovq 48(%rdi), %rdx
+    addq %rdx, %r11
+    mrmovq (%r11), %r12
+    addq %rbx, %rdx
+    rmmovq %rdx, 48(%rdi)
+    rmmovq %r12, 32(%rdi)
+    addq %rax, %r12                 # Katsotaan onko luku 0, jos on lopetetaan 
+                                    # ohjelman suoritus.
+    jg firstMulti
+    je rezero   
+    
+notFibonacci:                       # Asetetaan rax:n arvoksi viimeisin listan
+                                    # luku ja lopetetaan ohjelman suoritus.
+    mrmovq 32(%rdi), %rax
+    halt
+
+rezero:                             # Palautetaan rax:ssa 0, jos 0 löytyi.
+    
+    irmovq $0, %rax
+    halt
+    
+.pos 0x700                          # Muistipaikka mistä luvut luetaan
+array:    
+    
+.pos 0x1000                         # Bittitaulukon aloituspaikka
+startingPoint:
+
+.pos 0x1200                         # Pinon muistipaikka
+stack:
+
+.pos 0x1400                         # Muistipaikka globaaleille muuttujille
+variablesInMemory:
+
+
+.pos 0x1600                         # Muistipaikka luetuille luvuille, 
+results:                            # neliöjuurille ja luvuille, joilla 
+                                    # siirretään muistipaikkaa 
