@@ -13,7 +13,7 @@ Hangman, Ohjelmointi 2
 
 Tamagotchi & Fibonacci calculator, Tietokonejärjestelmät
 
-Own projects:
+Personal projects:
  
 Pocket calculator with GUI
 
