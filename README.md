@@ -17,6 +17,4 @@ Own projects:
  
 Pocket calculator with GUI
 
-
-
-
+Working Hours Application
