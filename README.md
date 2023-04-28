@@ -7,11 +7,15 @@ Final projects:
 
 Minesweeper, Ohjelmoinnin alkeet
 
-ATM machine, Ohjelmointi 1
+ATM machine, Programming 1
 
-Hangman, Ohjelmointi 2
+Hangman, Programming 2
 
-Tamagotchi & Fibonacci calculator, Tietokonejärjestelmät
+Phonebook, Data Structures & Algorithms 
+
+HTTPS Server, Programming 3
+
+Tamagotchi & Fibonacci calculator, Computer Systems
 
 
 
