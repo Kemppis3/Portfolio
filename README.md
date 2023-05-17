@@ -1,9 +1,7 @@
 # Portfolio
 Showcase of my programming projects
 
-Most of the projects are my final projects for programming courses at University of Oulu.
-
-Final projects:
+University Final projects:
 
 Minesweeper, Ohjelmoinnin alkeet
 
