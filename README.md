@@ -1,4 +1,4 @@
-# Portfolio
+# Projects
 Showcase of my programming projects
 
 University Final projects:
