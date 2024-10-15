@@ -1,7 +1,5 @@
 # Projects
-Showcase of my programming projects
-
-University Final projects:
+Showcase of my school programming projects
 
 Minesweeper, Ohjelmoinnin alkeet
 
@@ -14,11 +12,3 @@ Phonebook, Data Structures & Algorithms
 HTTPS Server, Programming 3
 
 Tamagotchi & Fibonacci calculator, Computer Systems
-
-
-
-Personal projects:
- 
-Pocket calculator with GUI
-
-Working Hours Application
