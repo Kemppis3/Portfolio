@@ -1,14 +1,14 @@
 # Projects
 Showcase of my school programming projects
 
-Minesweeper, Ohjelmoinnin alkeet
+Ohjelmoinnin alkeet:: Minesweeper
 
-ATM machine, Programming 1
+Programming 1: ATM machine
 
-Hangman, Programming 2
+Programming 2: Hangman
 
-Phonebook, Data Structures & Algorithms 
+Data Structures & Algorithms: Phonebook
 
-HTTPS Server, Programming 3
+Programming 3: HTTPS Server
 
-Tamagotchi & Fibonacci calculator, Computer Systems
+Computer Systems: Tamagotchi & Fibonacci calculator
