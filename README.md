@@ -1,7 +1,7 @@
 # Projects
 Showcase of my school programming projects
 
-Ohjelmoinnin alkeet:: Minesweeper
+Ohjelmoinnin alkeet: Minesweeper
 
 Programming 1: ATM machine
 
